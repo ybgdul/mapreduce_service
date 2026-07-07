@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import mapreduce.app.Filters.JwtTokenFilter;
+import mapreduce.app.Filters.RateLimitingFilter;
 import mapreduce.app.services.CustomUserDetailsService;
 import mapreduce.app.services.JwtTokenService;
 
@@ -28,6 +29,7 @@ public class SecurityConfig {
 
     private final JwtTokenService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final RateLimitingFilter rateLimitingFilter;
     
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) { 
@@ -38,6 +40,7 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         );
         http.addFilterBefore(jwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(rateLimitingFilter, JwtTokenFilter.class);
         http.exceptionHandling(ex -> ex.accessDeniedHandler((request, response, accessDeniedException) -> 
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access denied")));
 
