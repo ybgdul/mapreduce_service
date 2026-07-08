@@ -1,6 +1,6 @@
 package mapreduce.app.utilities.Enums;
 
-public enum TaskState {
+public enum TaskStatus {
     CREATED,
     ASSIGNED,
     RUNNING,

@@ -1,23 +1,22 @@
 package mapreduce.app.entities;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import mapreduce.app.utilities.Enums.JobStatus;
+import mapreduce.app.utilities.Enums.JobType;
 
 @Entity
 @Table(name="jobs")
@@ -30,32 +29,42 @@ public class Job {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable=false)
-    private String type;
+    private JobType type;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable=false)
+    private JobStatus status;
 
     @Column(nullable=false)
     private Instant createdAt;
 
+    private Instant startedAt;
+
+    private Instant completedAt;
+
     @Column(nullable=false)
-    private Instant updatedAt;
+    private Integer totalTasks = 0;
+
+    @Column(nullable=false)
+    private Integer completedTasks = 0;
+
+    @Column(nullable=false)
+    private Integer failedTasks = 0;
 
     @ManyToOne
     @JoinColumn(name="user_id", nullable=false)
     private AppUser user;
 
-    @OneToMany(mappedBy="job", cascade=CascadeType.ALL, orphanRemoval=true)
-    private List<Task> tasks;
+    private String inputLocation;
+    private String outputLocation;
 
-    public Job(String type, AppUser user) {
+    public Job(JobType type, AppUser user, String inputLocation) {
         this.type = type;
         this.user = user;
+        this.inputLocation = inputLocation;
         this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
-        this.tasks = new ArrayList<>();
-    }
-
-    @PreUpdate
-    public void preUpdate() { 
-        this.updatedAt = Instant.now();
+        this.status = JobStatus.CREATED;
     }
 }
