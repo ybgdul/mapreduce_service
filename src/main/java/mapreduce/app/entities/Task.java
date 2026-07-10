@@ -44,6 +44,9 @@ public class Task {
     @Column(nullable = false)
     private JobType jobType;
 
+    @Column(nullable=false, unique=true)
+    private Long sequence;
+
     private String workerId;
 
     private String inputReference;
@@ -56,9 +59,9 @@ public class Task {
     private Instant completedAt;
     
     @Column(nullable = false)
-    private long startOffset;
+    private long startRange;
     @Column(nullable = false)
-    private long endOffset;
+    private long endRange;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="job_id", nullable=false)
