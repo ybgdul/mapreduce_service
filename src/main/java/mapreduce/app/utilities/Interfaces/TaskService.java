@@ -5,10 +5,10 @@ import mapreduce.app.utilities.Enums.JobType;
 
 public interface TaskService {
     
-    void executeMapTask();
+    void executeMapTask(Task task);
     JobType getJobType();
     Task getTask();
-    void executeReduceTask();
+    void executeReduceTask(Task task);
 
 
 }

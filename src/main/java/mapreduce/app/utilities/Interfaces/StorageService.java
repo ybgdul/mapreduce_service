@@ -7,7 +7,13 @@ import org.springframework.web.multipart.MultipartFile;
 import mapreduce.app.utilities.DTOs.StorageFileDto;
 
 public interface StorageService {
-    StorageFileDto store(MultipartFile file);
-    InputStream load(String key);
+    StorageFileDto storeFile(MultipartFile file, Long jobId);
+    StorageFileDto storeMapResult(Long jobId, Long mapTaskId, byte[] data);
+    StorageFileDto storeMapResult(Long jobId, Long mapTaskId, Object result);
+    StorageFileDto storeReduceResult(Long jobId, Long reduceId, byte[] data);
+    StorageFileDto storeReduceResult(Long jobId, Long reduceId, Object result);
+
+    InputStream loadFile(Long jobId, Long offsetStart, Long offsetEnd);
     void delete(String key);
+    
 }
