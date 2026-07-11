@@ -10,8 +10,8 @@ import mapreduce.app.utilities.Enums.TaskStatus;
 
 public interface TaskRepo extends JpaRepository<Task, Long>{
     
-    @Query(value = "SELECT * FROM tasks WHERE status = 'ASSIGNED'", nativeQuery = true)
-    List<Task> getAllAssignedTasks();
+    @Query(value = "SELECT * FROM tasks WHERE status = 'CREATED'", nativeQuery = true)
+    List<Task> getAllCreatedTasks();
 
     @Query(value = "SELECT * FROM tasks WHERE status = 'COMPLETED'", nativeQuery = true)
     List<Task> getAllCompletedTasks();

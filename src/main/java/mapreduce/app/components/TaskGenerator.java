@@ -11,6 +11,7 @@ import mapreduce.app.entities.Job;
 import mapreduce.app.entities.Task;
 import mapreduce.app.repositories.TaskRepo;
 import mapreduce.app.utilities.DTOs.StorageFileDto;
+import mapreduce.app.utilities.Enums.JobStatus;
 import mapreduce.app.utilities.Enums.JobType;
 import mapreduce.app.utilities.Enums.TaskStatus;
 import mapreduce.app.utilities.Enums.TaskType;
@@ -21,8 +22,11 @@ public class TaskGenerator {
     
     private final TaskRepo taskRepo;
     private static final int CHUNK_SIZE = 128;
+    private final TaskScheduler taskScheduler;
 
     public void generateMapTasks(Job job, StorageFileDto metadata) { 
+
+        job.setStatus(JobStatus.RUNNING);
 
         Long length = metadata.length();
 
@@ -34,6 +38,7 @@ public class TaskGenerator {
             if(i + CHUNK_SIZE > length) {task.setEndRange(length); task.setStartRange(i);}
             else {task.setEndRange(i + CHUNK_SIZE); task.setStartRange(i); }
             task.setSequence(index++);
+            task.setStatus(TaskStatus.CREATED);
             task.setCreatedAt(Instant.now());
             task.setJob(job);
             task.setJobType(job.getType());
@@ -45,15 +50,17 @@ public class TaskGenerator {
 
         taskRepo.saveAll(tasks);
 
+        taskScheduler.pushTasks(tasks);
     }
 
-    public void generateReduceTasks(List<List<Long>> lists, JobType jobType) { 
+    public void generateReduceTasks(List<List<Long>> lists, Job job) { 
         List<Task> tasks = new ArrayList<>();
         for(List<Long> list : lists) { 
             Task task = new Task();
             task.setStatus(TaskStatus.CREATED);
             task.setTaskType(TaskType.REDUCE);
-            task.setJobType(jobType);
+            task.setJobType(job.getType());
+            task.setJob(job);
             task.setSequence((long) -1);
             task.setStartRange(list.get(0));
             task.setEndRange(list.get(1));
@@ -62,6 +69,8 @@ public class TaskGenerator {
         }
 
         taskRepo.saveAll(tasks);
+
+        taskScheduler.pushTasks(tasks);
     }
 
 }

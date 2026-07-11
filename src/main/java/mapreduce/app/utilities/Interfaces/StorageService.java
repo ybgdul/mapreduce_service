@@ -14,6 +14,7 @@ public interface StorageService {
     StorageFileDto storeReduceResult(Long jobId, Long reduceId, Object result);
 
     InputStream loadFile(Long jobId, Long offsetStart, Long offsetEnd);
+    InputStream loadMapResults(Long jobId, Long sequenceStart, Long sequenceEnd);
     void delete(String key);
     
 }

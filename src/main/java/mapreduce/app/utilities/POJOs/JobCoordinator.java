@@ -28,9 +28,12 @@ public class JobCoordinator {
     }
 
     public void poll() { 
-        List<List<Long>> resultSequences = buildSubsequenceRanges(mapResultRepo.getAllSequencesByJob(jobId));
+        List<List<Long>> resultSequences = buildSubsequenceRanges(mapResultRepo.getAllUnclaimedSequencesByJob(jobId));
+        for(List<Long> sequence : resultSequences) { 
+            mapResultRepo.updateClaimsToClaimed(jobId, sequence.getFirst(), sequence.getLast());
+        }
         Job job = jobRepo.findById(jobId).orElseThrow(() -> new NoSuchElementException("No such job by id: " + jobId));
-        taskGenerator.generateReduceTasks(resultSequences, job.getType());   
+        taskGenerator.generateReduceTasks(resultSequences, job);   
     }
 
     private List<List<Long>> buildSubsequenceRanges(List<Long> sequences) { 

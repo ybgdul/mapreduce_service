@@ -42,7 +42,7 @@ public class MapResult {
     private String storagePath;
 
     @Column(nullable = false)
-    private boolean finalResult;
+    private boolean claimed;
 
     @Column(nullable = false)
     private String metadata;

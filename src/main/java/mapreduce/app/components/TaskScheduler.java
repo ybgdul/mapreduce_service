@@ -16,12 +16,12 @@ public class TaskScheduler {
     private final TaskRepo taskRepo;
     private final TaskDispatcher dispatcher;
 
-    @Scheduled(fixedDelay = 1000)
-    public void poll() { 
-        List<Task> tasks = taskRepo.getAllAssignedTasks();
+    public void pushTasks(List<Task> tasks) { 
 
         for(Task task : tasks) { 
             dispatcher.dispatch(task);
         }
+
+        taskRepo.saveAll(tasks);
     }
 }

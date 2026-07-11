@@ -63,5 +63,11 @@ public class InMemoryStorageService implements StorageService {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'loadFile'");
     }
+
+    @Override
+    public InputStream loadMapResults(Long jobId, Long sequenceStart, Long sequenceEnd) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'loadMapResults'");
+    }
     
 }
