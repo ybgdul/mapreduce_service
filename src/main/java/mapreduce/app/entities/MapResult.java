@@ -45,8 +45,5 @@ public class MapResult {
     private boolean claimed;
 
     @Column(nullable = false)
-    private String metadata;
-
-    @Column(nullable = false)
     private Instant createdAt;
 }

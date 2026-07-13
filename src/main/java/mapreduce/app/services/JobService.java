@@ -1,5 +1,6 @@
 package mapreduce.app.services;
 
+import java.io.InputStream;
 import java.time.Instant;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import mapreduce.app.utilities.DTOs.StorageFileDto;
 import mapreduce.app.utilities.Enums.JobStatus;
 import mapreduce.app.utilities.Enums.JobType;
 import mapreduce.app.utilities.Exceptions.CustomAuthException;
+import mapreduce.app.utilities.Exceptions.UnknownJobException;
 import mapreduce.app.utilities.Interfaces.StorageService;
 
 @Service
@@ -29,7 +31,7 @@ public class JobService {
     private final JobRepo jobRepo;
     private final JobCoordinatorManager jobCoordinatorManager;
     
-    public void submitWordCountJob(MultipartFile file, Long userId) { 
+    public Long submitWordCountJob(MultipartFile file, Long userId) { 
         
         AppUser user = userRepo.findById(userId).orElseThrow(() -> new CustomAuthException("User not found by id: " + userId, HttpStatus.NOT_FOUND));
 
@@ -48,5 +50,16 @@ public class JobService {
         jobCoordinatorManager.register(job);
 
         taskGenerator.generateMapTasks(job, holder);
+
+        return job.getId();
+    }
+    
+    public InputStream getWordCountJob(Job job) { 
+        return storageService.loadFile(job.getId());
+    }
+
+    public Job getJob(Long jobId) { 
+        Job job = jobRepo.findById(jobId).orElseThrow(() -> new UnknownJobException("Job by id not found: " + jobId));
+        return job;
     }
 }

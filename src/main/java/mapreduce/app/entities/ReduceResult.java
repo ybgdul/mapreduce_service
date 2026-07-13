@@ -39,11 +39,5 @@ public class ReduceResult {
     private String storagePath;
 
     @Column(nullable = false)
-    private boolean finalResult;
-
-    @Column(nullable = false)
-    private String metadata;
-
-    @Column(nullable = false)
     private Instant createdAt;
 }
