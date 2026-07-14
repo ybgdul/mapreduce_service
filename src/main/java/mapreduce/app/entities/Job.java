@@ -45,13 +45,13 @@ public class Job {
     private Instant completedAt;
 
     @Column(nullable=false)
-    private Integer totalTasks = 0;
+    private Long totalTasks;
 
     @Column(nullable=false)
-    private Integer completedTasks = 0;
+    private Long completedTasks;
 
     @Column(nullable=false)
-    private Integer failedTasks = 0;
+    private Long failedTasks;
 
     @ManyToOne
     @JoinColumn(name="user_id", nullable=false)

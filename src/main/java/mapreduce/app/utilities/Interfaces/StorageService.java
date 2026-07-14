@@ -16,6 +16,7 @@ public interface StorageService {
     InputStream loadFile(Long jobId, Long offsetStart, Long offsetEnd);
     InputStream loadFile(Long jobId);
     InputStream loadMapResult(Long jobId, Long mapTaskId, Long sequence);
+    InputStream loadReduceResult(Long jobId, Long reduceTaskId, Long sequence);
     void delete(String key);
     
 }

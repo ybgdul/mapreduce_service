@@ -15,4 +15,6 @@ public interface TaskRepo extends JpaRepository<Task, Long>{
 
     @Query(value = "SELECT * FROM tasks WHERE status = 'COMPLETED'", nativeQuery = true)
     List<Task> getAllCompletedTasks();
+
+    
 }

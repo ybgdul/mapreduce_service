@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import mapreduce.app.repositories.JobRepo;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,6 @@ import mapreduce.app.entities.Task;
 import mapreduce.app.repositories.TaskRepo;
 import mapreduce.app.utilities.DTOs.StorageFileDto;
 import mapreduce.app.utilities.Enums.JobStatus;
-import mapreduce.app.utilities.Enums.JobType;
 import mapreduce.app.utilities.Enums.TaskStatus;
 import mapreduce.app.utilities.Enums.TaskType;
 
@@ -20,9 +20,11 @@ import mapreduce.app.utilities.Enums.TaskType;
 @RequiredArgsConstructor
 public class TaskGenerator {
     
+    private final JobRepo jobRepo;
     private final TaskRepo taskRepo;
-    private static final int CHUNK_SIZE = 128;
+    private static final long CHUNK_SIZE = 134_217_728;
     private final TaskScheduler taskScheduler;
+
 
     public void generateMapTasks(Job job, StorageFileDto metadata) { 
 
@@ -33,6 +35,7 @@ public class TaskGenerator {
         List<Task> tasks = new ArrayList<>();
 
         long index = 1;
+        long count = 0;
         for(long i = 0; i < length; i += CHUNK_SIZE) { 
             Task task = new Task();
             if(i + CHUNK_SIZE > length) {task.setEndRange(length); task.setStartRange(i);}
@@ -46,9 +49,12 @@ public class TaskGenerator {
             task.setOutputReference(job.getOutputLocation());
             task.setTaskType(TaskType.MAP);
             tasks.add(task);
+            count++;
         }
 
         taskRepo.saveAll(tasks);
+        job.setTotalTasks(count);
+        jobRepo.save(job);
 
         taskScheduler.pushTasks(tasks);
     }

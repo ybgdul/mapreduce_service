@@ -44,6 +44,9 @@ public class JobService {
         job.setStatus(JobStatus.CREATED);
         job.setType(JobType.COUNT_WORDS);
         job.setUser(user);
+        job.setCompletedTasks((long)0);
+        job.setFailedTasks((long)0);
+        job.setTotalTasks((long)0);
 
         jobRepo.save(job);
 

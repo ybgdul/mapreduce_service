@@ -4,35 +4,42 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Objects;
 
+import mapreduce.app.components.JobCoordinatorManager;
 import mapreduce.app.components.TaskGenerator;
 import mapreduce.app.entities.Job;
 import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.MapResultRepo;
+import mapreduce.app.utilities.Exceptions.UnknownJobException;
 
 public class JobCoordinator {
 
     private static final int MAX_SEQUENCE = 4;
     
+    private final JobCoordinatorManager manager;
     private final MapResultRepo mapResultRepo;
     private final TaskGenerator taskGenerator;
     private final JobRepo jobRepo;
     private final Long jobId;
 
-    public JobCoordinator(MapResultRepo mapResultRepo, TaskGenerator taskGenerator, JobRepo jobRepo, Long jobId) { 
+    public JobCoordinator(JobCoordinatorManager manager, MapResultRepo mapResultRepo, TaskGenerator taskGenerator, JobRepo jobRepo, Long jobId) { 
+        this.manager = manager;
         this.mapResultRepo = mapResultRepo;
         this.taskGenerator = taskGenerator;
         this.jobRepo = jobRepo;
         this.jobId = jobId;
     }
 
-    public void poll() { 
+    public void poll() {
         List<List<Long>> resultSequences = buildSubsequenceRanges(mapResultRepo.getAllUnclaimedSequencesByJob(jobId));
+
+        Job job = jobRepo.findById(jobId).orElseThrow(() -> new UnknownJobException("No such job by id: " + jobId));
+        if(Objects.equals(job.getCompletedTasks(), job.getTotalTasks())) manager.completeJob(job);
+
         for(List<Long> sequence : resultSequences) { 
             mapResultRepo.updateClaimsToClaimed(jobId, sequence.getFirst(), sequence.getLast());
         }
-        Job job = jobRepo.findById(jobId).orElseThrow(() -> new NoSuchElementException("No such job by id: " + jobId));
         taskGenerator.generateReduceTasks(resultSequences, job);   
     }
 

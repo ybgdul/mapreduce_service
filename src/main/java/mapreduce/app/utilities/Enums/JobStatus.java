@@ -5,5 +5,6 @@ public enum JobStatus {
     RUNNING,
     COMPLETED,
     FAILED,
-    CANCELLED
+    CANCELLED,
+    POST_PROCESS
 }
