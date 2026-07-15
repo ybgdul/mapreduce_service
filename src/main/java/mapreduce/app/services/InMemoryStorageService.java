@@ -1,7 +1,11 @@
 package mapreduce.app.services;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -110,6 +114,47 @@ public class InMemoryStorageService implements StorageService {
 
     @Override
     public InputStream loadFile(Long jobId, Long offsetStart, Long offsetEnd) {
+        Path inputFile = root.resolve(jobId.toString()).resolve("input.txt");
+
+        try { 
+            RandomAccessFile file = new RandomAccessFile(inputFile.toFile(), "r");
+            file.seek(offsetStart);
+
+            long remaining = offsetEnd - offsetStart + 1;
+
+            return new FilterInputStream(new FileInputStream(file.getFD())) { 
+                private long remainingBytes = remaining;
+
+                @Override
+                public int read() throws IOException { 
+                    if(remainingBytes <= 0) return -1;
+
+                    int value = super.read();
+                    if(value != -1) remainingBytes--;
+                    return value;
+                }
+
+                @Override
+                public int read(byte[] b, int off, int len) throws IOException {
+                    if(remainingBytes <= 0) return -1;
+
+                    int bytesToRead = (int) Math.min(len, remainingBytes);
+                    int read = super.read(b, off, bytesToRead);
+
+                    if(read != -1) remainingBytes--;
+
+                    return read;
+                }
+
+                @Override 
+                public void close() throws IOException { 
+                    super.close();
+                    file.close();
+                }
+            };
+        } catch (IOException e) { 
+            throw new JobStorageServiceException("Loading file chunk has failed: "  + e.getMessage());
+        }
     }
 
     @Override

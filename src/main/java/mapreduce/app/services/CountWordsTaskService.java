@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -14,9 +13,11 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
+import mapreduce.app.entities.Job;
 import mapreduce.app.entities.MapResult;
 import mapreduce.app.entities.ReduceResult;
 import mapreduce.app.entities.Task;
+import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.MapResultRepo;
 import mapreduce.app.repositories.ReduceResultRepo;
 import mapreduce.app.repositories.TaskRepo;
@@ -24,9 +25,12 @@ import mapreduce.app.utilities.DTOs.CountTaskResult;
 import mapreduce.app.utilities.DTOs.StorageFileDto;
 import mapreduce.app.utilities.Enums.JobType;
 import mapreduce.app.utilities.Enums.TaskStatus;
+import mapreduce.app.utilities.Exceptions.StorageConnectionException;
+import mapreduce.app.utilities.Exceptions.UnknownJobException;
 import mapreduce.app.utilities.Exceptions.WordCountException;
 import mapreduce.app.utilities.Interfaces.StorageService;
 import mapreduce.app.utilities.Interfaces.TaskService;
+import mapreduce.app.utilities.POJOs.StorageInputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +41,7 @@ public class CountWordsTaskService implements TaskService{
     private final MapResultRepo mapResultRepo;
     private final ReduceResultRepo reduceResultRepo;
     private final TaskRepo taskRepo;
+    private final JobRepo jobRepo;
     private final StorageService storageService;
     private final ObjectMapper objectMapper;
 
@@ -54,29 +59,35 @@ public class CountWordsTaskService implements TaskService{
     public void executeMapTask(Task task) {
         this.task = task;
         task.setStatus(TaskStatus.RUNNING);
+        Job job = task.getJob();
         taskRepo.saveAndFlush(task);
-        InputStream chunk = storageService.loadFile(task.getJob().getId(), task.getStartRange(), task.getEndRange());
-        long count = (long) -1;
+        InputStream chunk = loadFile(task);
+        long count = (long) 0;
         try{ 
             count = count(chunk);
+        } catch (StorageConnectionException e) { 
+            task.setStatus(TaskStatus.ASSIGNED);
+            taskRepo.save(task);
+            return;
         } catch (IOException e) { 
             task.setStatus(TaskStatus.FAILED);
             taskRepo.save(task);
             throw new WordCountException("Failed to count the words: " + e.getMessage());
-        }
+        } 
 
         task.setStatus(TaskStatus.COMPLETED);
         CountTaskResult result = new CountTaskResult( task.getStartRange(), task.getEndRange(), count);
-        StorageFileDto storage = storageService.storeMapResult(task.getJob().getId(),task.getSequence(), task.getSequence(), result);
+        StorageFileDto storage = storageService.storeMapResult(job.getId(),task.getSequence(), task.getSequence(), result);
         MapResult mapResult = new MapResult();
         mapResult.setClaimed(false);
         mapResult.setCreatedAt(Instant.now());
-        mapResult.setJob(task.getJob());
+        mapResult.setJob(job);
         mapResult.setSequence(task.getSequence());
         mapResult.setStoragePath(storage.location());
         mapResult.setTask(task);
         mapResultRepo.save(mapResult);
         taskRepo.save(task);
+        
     }
 
     @Override
@@ -89,15 +100,16 @@ public class CountWordsTaskService implements TaskService{
 
         long answer = (long) 0;
         for(MapResult result : results) {
-            InputStream input = storageService.loadMapResult(result.getJob().getId(), result.getTask().getId(), result.getSequence());
             CountTaskResult countResult = null;
-            try {
+            try (InputStream input = loadResult(result); ) {             
                 countResult = objectMapper.readValue(input, CountTaskResult.class);
+                answer += countResult.count();
+            } catch (StorageConnectionException e)  {
+                //add
             } catch (IOException e) {
-                // TODO Auto-generated catch block
+                // TERMINATE THE RESULTS AND READ THE TASKS, DON'T TERMINATE THE JOB
                 e.printStackTrace();
             }
-            answer += countResult.count();
         }
 
         task.setStatus(TaskStatus.COMPLETED);
@@ -112,18 +124,28 @@ public class CountWordsTaskService implements TaskService{
         taskRepo.save(task);
     }
     
-    private long count(InputStream input) throws IOException { 
+    private long count(InputStream chunk) throws IOException, StorageConnectionException { 
         long count = 0;
-        try (BufferedReader reader = new BufferedReader( new InputStreamReader(input, StandardCharsets.UTF_8))) {
-            String line;
+        String line;
 
+        try (BufferedReader reader = new BufferedReader( new InputStreamReader(chunk, StandardCharsets.UTF_8))) {
             while((line = reader.readLine()) != null) { 
-                if(!line.isBlank()) {
-                    count += line.trim().split("\\s+").length;
-                }
+            if(!line.isBlank()) {
+                count += line.trim().split("\\s+").length;
+            }
             }
         }
 
         return count;
+    }
+
+    private InputStream loadFile(Task task) { 
+        InputStream raw = storageService.loadFile(task.getJob().getId(), task.getStartRange(), task.getEndRange());
+        return new StorageInputStream(raw);
+    }
+    
+    private InputStream loadResult(MapResult result) { 
+        InputStream raw = storageService.loadMapResult(result.getJob().getId(), result.getTask().getId(), result.getSequence());
+        return new StorageInputStream(raw);
     }
 }
