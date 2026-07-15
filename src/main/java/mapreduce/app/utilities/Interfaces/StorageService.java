@@ -17,6 +17,7 @@ public interface StorageService {
     InputStream loadFile(Long jobId);
     InputStream loadMapResult(Long jobId, Long mapTaskId, Long sequence);
     InputStream loadReduceResult(Long jobId, Long reduceTaskId, Long sequence);
-    void delete(String key);
+    void delete(Long jobId, Long taskId, boolean isMap);
     
+    void terminate(Long jobId);
 }

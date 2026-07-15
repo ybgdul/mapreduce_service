@@ -8,6 +8,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -17,7 +18,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name="map_result")
+@Table(name="map_result", indexes = {
+    @Index(name="idx_map_result_job_claimed", columnList = "job_id, claimed"),
+    @Index(name="idx_map_result_job_sequence", columnList = "job_id, sequence")
+})
 @Getter
 @Setter
 @NoArgsConstructor

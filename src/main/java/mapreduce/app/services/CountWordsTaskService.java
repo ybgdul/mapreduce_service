@@ -26,8 +26,6 @@ import mapreduce.app.utilities.DTOs.StorageFileDto;
 import mapreduce.app.utilities.Enums.JobType;
 import mapreduce.app.utilities.Enums.TaskStatus;
 import mapreduce.app.utilities.Exceptions.StorageConnectionException;
-import mapreduce.app.utilities.Exceptions.UnknownJobException;
-import mapreduce.app.utilities.Exceptions.WordCountException;
 import mapreduce.app.utilities.Interfaces.StorageService;
 import mapreduce.app.utilities.Interfaces.TaskService;
 import mapreduce.app.utilities.POJOs.StorageInputStream;
@@ -38,12 +36,14 @@ public class CountWordsTaskService implements TaskService{
 
     private Task task;
 
+    private final JobService jobService;
     private final MapResultRepo mapResultRepo;
     private final ReduceResultRepo reduceResultRepo;
     private final TaskRepo taskRepo;
     private final JobRepo jobRepo;
     private final StorageService storageService;
     private final ObjectMapper objectMapper;
+
 
     @Override
     public JobType getJobType() {
@@ -72,7 +72,7 @@ public class CountWordsTaskService implements TaskService{
         } catch (IOException e) { 
             task.setStatus(TaskStatus.FAILED);
             taskRepo.save(task);
-            throw new WordCountException("Failed to count the words: " + e.getMessage());
+            //terminate the job
         } 
 
         task.setStatus(TaskStatus.COMPLETED);
@@ -99,16 +99,20 @@ public class CountWordsTaskService implements TaskService{
         List<MapResult> results = mapResultRepo.getAllResultsBySequenceAndJobId(task.getJob().getId(), task.getStartRange(), task.getEndRange());
 
         long answer = (long) 0;
+        long currentSubsequence = results.getFirst().getSequence() - 1;
         for(MapResult result : results) {
+            currentSubsequence++;
             CountTaskResult countResult = null;
             try (InputStream input = loadResult(result); ) {             
                 countResult = objectMapper.readValue(input, CountTaskResult.class);
                 answer += countResult.count();
             } catch (StorageConnectionException e)  {
-                //add
+                task.setStatus(TaskStatus.ASSIGNED);
+                taskRepo.save(task);
+                return;
             } catch (IOException e) {
-                // TERMINATE THE RESULTS AND READ THE TASKS, DON'T TERMINATE THE JOB
-                e.printStackTrace();
+                jobService.reduceFailCleanup(task,currentSubsequence, results);
+                return;
             }
         }
 

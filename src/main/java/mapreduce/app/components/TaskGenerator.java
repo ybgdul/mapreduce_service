@@ -56,7 +56,7 @@ public class TaskGenerator {
         job.setTotalTasks(count);
         jobRepo.save(job);
 
-        taskScheduler.pushTasks(tasks);
+        taskScheduler.pushMapTasks(tasks);
     }
 
     public void generateReduceTasks(List<List<Long>> lists, Job job) { 
@@ -76,7 +76,7 @@ public class TaskGenerator {
 
         taskRepo.saveAll(tasks);
 
-        taskScheduler.pushTasks(tasks);
+        taskScheduler.pushReduceTasks(tasks);
     }
 
 }

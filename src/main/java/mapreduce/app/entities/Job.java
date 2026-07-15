@@ -9,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -19,7 +20,9 @@ import mapreduce.app.utilities.Enums.JobStatus;
 import mapreduce.app.utilities.Enums.JobType;
 
 @Entity
-@Table(name="jobs")
+@Table(name="jobs", indexes = {
+    @Index(name="idx_job_status", columnList = "status")
+})
 @Getter
 @Setter
 @NoArgsConstructor

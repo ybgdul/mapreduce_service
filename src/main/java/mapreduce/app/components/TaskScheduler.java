@@ -2,7 +2,6 @@ package mapreduce.app.components;
 
 import java.util.List;
 
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
@@ -16,12 +15,15 @@ public class TaskScheduler {
     private final TaskRepo taskRepo;
     private final TaskDispatcher dispatcher;
 
-    public void pushTasks(List<Task> tasks) { 
-
+    public void pushMapTasks(List<Task> tasks) { 
         for(Task task : tasks) { 
-            dispatcher.dispatch(task);
+            dispatcher.dispatchMap(task);
         }
+    }
 
-        taskRepo.saveAll(tasks);
+    public void pushReduceTasks(List<Task> tasks) { 
+        for(Task task : tasks) { 
+            dispatcher.dispatchReduce(task);
+        }
     }
 }

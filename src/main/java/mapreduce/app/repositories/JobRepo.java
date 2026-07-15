@@ -9,6 +9,6 @@ import mapreduce.app.entities.Job;
 
 public interface JobRepo extends JpaRepository<Job, Long>{
     
-    @Query(value="SELECT * FROM job_table WHERE status = 'RUNNING' or status = 'CREATED' or status = 'ASSIGNED'", nativeQuery=true)
-    List<Job> findAllLeftOutJobs();
+    @Query(value="SELECT * FROM job_table WHERE status = 'RUNNING' or status = 'CREATED' or status = ''", nativeQuery=true)
+    public List<Job> findAllLeftOutJobs();
 }

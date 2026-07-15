@@ -32,13 +32,21 @@ public class JobCoordinator {
     }
 
     public void poll() {
-        List<List<Long>> resultSequences = buildSubsequenceRanges(mapResultRepo.getAllUnclaimedSequencesByJob(jobId));
-
         Job job = jobRepo.findById(jobId).orElseThrow(() -> new UnknownJobException("No such job by id: " + jobId));
-        if(Objects.equals(job.getCompletedTasks(), job.getTotalTasks())) manager.completeJob(job);
+        if(Objects.equals(job.getCompletedTasks(), job.getTotalTasks())) {manager.completeJob(job); return;}
 
-        for(List<Long> sequence : resultSequences) { 
-            mapResultRepo.updateClaimsToClaimed(jobId, sequence.getFirst(), sequence.getLast());
+        List<Long> sequences = mapResultRepo.getAllUnclaimedSequencesByJob(jobId);
+        List<List<Long>> resultSequences = buildSubsequenceRanges(sequences);
+
+        if(resultSequences.isEmpty()) {
+            for(Long sequence : sequences) { 
+                mapResultRepo.updateClaimsToClaimed(jobId, sequence, sequence);
+                resultSequences.add(List.of(sequence, sequence));
+            }
+        } else { 
+            for(List<Long> sequence : resultSequences) { 
+                mapResultRepo.updateClaimsToClaimed(jobId, sequence.getFirst(), sequence.getLast());
+            }
         }
         taskGenerator.generateReduceTasks(resultSequences, job);   
     }
