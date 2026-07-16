@@ -4,12 +4,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import mapreduce.app.repositories.JobRepo;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import mapreduce.app.entities.Job;
 import mapreduce.app.entities.Task;
+import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.TaskRepo;
 import mapreduce.app.utilities.DTOs.StorageFileDto;
 import mapreduce.app.utilities.Enums.JobStatus;
@@ -45,8 +45,6 @@ public class TaskGenerator {
             task.setCreatedAt(Instant.now());
             task.setJob(job);
             task.setJobType(job.getType());
-            task.setInputReference(job.getInputLocation());
-            task.setOutputReference(job.getOutputLocation());
             task.setTaskType(TaskType.MAP);
             tasks.add(task);
             count++;

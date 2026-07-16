@@ -60,13 +60,11 @@ public class Job {
     @JoinColumn(name="user_id", nullable=false)
     private AppUser user;
 
-    private String inputLocation;
-    private String outputLocation;
+    private String errorMessage;
 
-    public Job(JobType type, AppUser user, String inputLocation) {
+    public Job(JobType type, AppUser user) {
         this.type = type;
         this.user = user;
-        this.inputLocation = inputLocation;
         this.createdAt = Instant.now();
         this.status = JobStatus.CREATED;
     }

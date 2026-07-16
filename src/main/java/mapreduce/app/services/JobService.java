@@ -3,6 +3,7 @@ package mapreduce.app.services;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -50,7 +51,6 @@ public class JobService {
         StorageFileDto holder = storageService.storeFile(file, job.getId());
 
         job.setCreatedAt(Instant.now());
-        job.setInputLocation(holder.location());
         job.setStatus(JobStatus.CREATED);
         job.setType(JobType.COUNT_WORDS);
         job.setUser(user);
@@ -74,11 +74,11 @@ public class JobService {
     @Transactional
     public void totalCleanup(Job job, Exception e) { 
         job.setStatus(JobStatus.CANCELLED);
-        job.setOutputLocation(e.getMessage());
+        job.setErrorMessage(e.getMessage());
         storageService.terminate(job.getId());
-        taskRepo.deleteALlByJob(job);
-        mapResultRepo.deleteALlByJob(job);
-        reduceResultRepo.deleteALlByJob(job);
+        taskRepo.deleteAllByJob(job);
+        mapResultRepo.deleteAllByJob(job);
+        reduceResultRepo.deleteAllByJob(job);
     }
 
     @Transactional
@@ -87,7 +87,7 @@ public class JobService {
 
         for(int i = 0; i < mapResults.size(); i++) {
             MapResult result = mapResults.get(i); 
-            if(result.getSequence() == sequence) {toDelete = result; mapResults.remove(i);}
+            if(Objects.equals(result.getSequence(), sequence)) {toDelete = result; mapResults.remove(i);}
             result.setClaimed(false);
         }
         Task mapTask = toDelete.getTask();

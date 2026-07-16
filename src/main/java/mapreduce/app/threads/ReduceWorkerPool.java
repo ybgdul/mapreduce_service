@@ -22,7 +22,7 @@ public class ReduceWorkerPool {
     }
 
     public void submit(Task task) { 
-        TaskService service = registry.findService(task.getJobType());
+        TaskService service = registry.findTaskService(task.getJobType());
         executor.execute(
             () -> {
                 service.executeReduceTask(task);

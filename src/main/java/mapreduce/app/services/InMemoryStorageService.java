@@ -1,22 +1,22 @@
 package mapreduce.app.services;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.Comparator;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 
 import mapreduce.app.utilities.DTOs.StorageFileDto;
 import mapreduce.app.utilities.Exceptions.JobStorageServiceException;
@@ -113,6 +113,32 @@ public class InMemoryStorageService implements StorageService {
     }
 
     @Override
+    public StorageFileDto storeResult(Long jobId, byte[] data) { 
+        Path resultFile = root.resolve(jobId.toString()).resolve("result.txt");
+
+        try { 
+            Files.write(resultFile, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            long size = Files.size(resultFile);
+            return new StorageFileDto(root.relativize(resultFile).toString(), size);
+        } catch (IOException e) { 
+            throw new JobStorageServiceException("Storing incoming final result file has failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public StorageFileDto storeResult(Long jobId, Object result) { 
+        Path resultFile = root.resolve(jobId.toString()).resolve("result.json");
+
+        try { 
+            objectMapper.writeValue(resultFile.toFile(), result);
+            long size = Files.size(resultFile);
+            return new StorageFileDto(root.relativize(resultFile).toString(), size);
+        } catch (IOException e) { 
+            throw new JobStorageServiceException("Storing incoming final result JSON has failed: " + e.getMessage());
+        }
+    }
+
+    @Override
     public InputStream loadFile(Long jobId, Long offsetStart, Long offsetEnd) {
         Path inputFile = root.resolve(jobId.toString()).resolve("input.txt");
 
@@ -168,7 +194,7 @@ public class InMemoryStorageService implements StorageService {
     }
 
     @Override
-    public InputStream loadMapResult(Long jobId, Long mapTaskId, Long sequence) {
+    public InputStream loadMapResult(Long jobId, Long mapTaskId) {
         Path resultFile = root.resolve(jobId.toString()).resolve("map").resolve(mapTaskId.toString());
 
         try {
@@ -179,7 +205,7 @@ public class InMemoryStorageService implements StorageService {
     }
 
     @Override
-    public InputStream loadReduceResult(Long jobId, Long reduceTaskId, Long sequence) {
+    public InputStream loadReduceResult(Long jobId, Long reduceTaskId) {
         Path resultFile = root.resolve(jobId.toString()).resolve("reduce").resolve(reduceTaskId.toString());
 
         try {
@@ -191,12 +217,41 @@ public class InMemoryStorageService implements StorageService {
 
     @Override
     public void delete(Long jobId, Long taskId, boolean isMap) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'delete'");
+        Path directory = root.resolve(jobId.toString()).resolve( (isMap) ? "map" : "reduce");
+
+        Path file = directory.resolve(taskId.toString());
+        Path jsonFile = directory.resolve(taskId.toString() + ".json");
+
+        try {
+            Files.deleteIfExists(file);
+            Files.deleteIfExists(jsonFile);
+        } catch (IOException e) {
+            //I think it's not fatal
+        }
+
     }
 
     @Override 
     public void terminate(Long jobId){ 
+        Path jobDirectory = root.resolve(jobId.toString());
+
+        if(!Files.exists(jobDirectory)) { return; }
+        
+        try {
+            Files.walk(jobDirectory).sorted(Comparator.reverseOrder()).forEach(
+                path -> {
+                    try { 
+                        Files.delete(path);
+                    } catch (IOException e) { 
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            );
+        } catch (IOException e) { 
+
+        } catch (UncheckedIOException e) {
+            
+        }
 
     }
     

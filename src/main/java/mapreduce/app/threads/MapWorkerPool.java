@@ -21,7 +21,7 @@ public class MapWorkerPool {
     }
 
     public void submit(Task task) { 
-        TaskService service = registry.findService(task.getJobType());
+        TaskService service = registry.findTaskService(task.getJobType());
         executor.execute(
             () -> {
                 service.executeMapTask(task);

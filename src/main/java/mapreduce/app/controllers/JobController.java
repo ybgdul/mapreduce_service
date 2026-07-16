@@ -5,7 +5,6 @@ import java.io.InputStream;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,7 +47,7 @@ public class JobController {
                 return ResponseEntity.ok("Job is being processed");
             }
             case FAILED, CANCELLED -> {
-                return ResponseEntity.internalServerError().body("Job is failed: " + job.getOutputLocation());
+                return ResponseEntity.internalServerError().body("Job is failed: " + job.getErrorMessage());
             }
             default -> {
                 InputStream inputStream = jobService.getWordCountJob(job);

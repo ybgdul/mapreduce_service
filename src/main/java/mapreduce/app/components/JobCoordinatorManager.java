@@ -5,21 +5,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import mapreduce.app.services.JobService;
-import mapreduce.app.services.PostProcessService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import mapreduce.app.entities.Job;
 import mapreduce.app.entities.Task;
 import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.MapResultRepo;
 import mapreduce.app.repositories.TaskRepo;
+import mapreduce.app.services.JobService;
 import mapreduce.app.utilities.Enums.JobStatus;
 import mapreduce.app.utilities.Enums.TaskType;
+import mapreduce.app.utilities.Interfaces.PostProcessService;
 import mapreduce.app.utilities.POJOs.JobCoordinator;
 
 @Component
@@ -27,12 +26,12 @@ import mapreduce.app.utilities.POJOs.JobCoordinator;
 public class JobCoordinatorManager {
 
     private final TaskScheduler taskScheduler;
-    private final PostProcessService postProcessService;
     private final TaskRepo taskRepo;
     private final JobRepo jobRepo;
     private final MapResultRepo mapResultRepo;
     private final TaskGenerator taskGenerator;
     private final JobService jobService;
+    private final TaskRegistry taskRegistry;
     
     private final Map<Long, JobCoordinator> coordinators = new ConcurrentHashMap<>();
 
@@ -72,7 +71,8 @@ public class JobCoordinatorManager {
         if(coordinator == null) return;
         job.setStatus(JobStatus.POST_PROCESS);
         jobRepo.save(job);
-        postProcessService.postProcess(job);
+        PostProcessService service = taskRegistry.findPostProcessService(job.getType());
+        service.postProcess(job);
     }
 
     public void terminateJob(Job job, Exception e) { 

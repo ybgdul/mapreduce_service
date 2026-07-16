@@ -149,7 +149,7 @@ public class CountWordsTaskService implements TaskService{
     }
     
     private InputStream loadResult(MapResult result) { 
-        InputStream raw = storageService.loadMapResult(result.getJob().getId(), result.getTask().getId(), result.getSequence());
+        InputStream raw = storageService.loadMapResult(result.getJob().getId(), result.getTask().getId());
         return new StorageInputStream(raw);
     }
 }

@@ -20,5 +20,5 @@ public interface MapResultRepo extends JpaRepository<MapResult, Long>{
     @Query(value="SELECT * FROM map_result WHERE job_id = :job_id AND sequence BETWEEN :start AND :end", nativeQuery=true)
     public List<MapResult> getAllResultsBySequenceAndJobId(@Param("job_id") Long job_id, @Param("start") Long start, @Param("end") Long end);
 
-    public void deleteALlByJob(Job job );
+    public void deleteAllByJob(Job job );
 }
