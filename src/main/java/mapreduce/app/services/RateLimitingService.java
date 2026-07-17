@@ -4,9 +4,12 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.stereotype.Service;
+
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 
+@Service
 public class RateLimitingService {
     
     private final Map<String, Bucket> map = new ConcurrentHashMap<>();

@@ -17,7 +17,6 @@ import mapreduce.app.entities.Job;
 import mapreduce.app.entities.MapResult;
 import mapreduce.app.entities.ReduceResult;
 import mapreduce.app.entities.Task;
-import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.MapResultRepo;
 import mapreduce.app.repositories.ReduceResultRepo;
 import mapreduce.app.repositories.TaskRepo;
@@ -36,13 +35,12 @@ public class CountWordsTaskService implements TaskService{
 
     private Task task;
 
-    private final JobService jobService;
     private final MapResultRepo mapResultRepo;
     private final ReduceResultRepo reduceResultRepo;
     private final TaskRepo taskRepo;
-    private final JobRepo jobRepo;
     private final StorageService storageService;
     private final ObjectMapper objectMapper;
+    private final DeletionService deletionService;
 
 
     @Override
@@ -72,7 +70,7 @@ public class CountWordsTaskService implements TaskService{
         } catch (IOException e) { 
             task.setStatus(TaskStatus.FAILED);
             taskRepo.save(task);
-            //terminate the job
+            deletionService.terminate(job, e);
         } 
 
         task.setStatus(TaskStatus.COMPLETED);
@@ -111,8 +109,7 @@ public class CountWordsTaskService implements TaskService{
                 taskRepo.save(task);
                 return;
             } catch (IOException e) {
-                jobService.reduceFailCleanup(task,currentSubsequence, results);
-                return;
+                deletionService.terminateReduce(results, currentSubsequence, task);
             }
         }
 

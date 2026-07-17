@@ -32,7 +32,7 @@ public class MapResult {
     private Long id;
 
     @ManyToOne(fetch=FetchType.LAZY)
-    @Column(nullable = false, name="job_id")
+    @JoinColumn(nullable = false, name="job_id")
     private Job job;
 
     @OneToOne(fetch=FetchType.LAZY)

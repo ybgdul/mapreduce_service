@@ -24,7 +24,7 @@ import mapreduce.app.utilities.Enums.JobStatus;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/jobs")
-public class JobController {
+public class RestJobController {
 
     private final JobService jobService;
     private final JobRepo jobRepo;

@@ -11,6 +11,7 @@ import mapreduce.app.components.TaskGenerator;
 import mapreduce.app.entities.Job;
 import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.MapResultRepo;
+import mapreduce.app.utilities.Enums.JobStatus;
 import mapreduce.app.utilities.Exceptions.UnknownJobException;
 
 public class JobCoordinator {
@@ -33,6 +34,7 @@ public class JobCoordinator {
 
     public void poll() {
         Job job = jobRepo.findById(jobId).orElseThrow(() -> new UnknownJobException("No such job by id: " + jobId));
+        if(job.getStatus() == JobStatus.CANCELLED) {manager.cancelJob(job);}
         if(Objects.equals(job.getCompletedTasks(), job.getTotalTasks())) {manager.completeJob(job); return;}
 
         List<Long> sequences = mapResultRepo.getAllUnclaimedSequencesByJob(jobId);

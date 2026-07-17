@@ -6,13 +6,11 @@ import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import mapreduce.app.entities.Task;
-import mapreduce.app.repositories.TaskRepo;
 
 @Component
 @RequiredArgsConstructor
 public class TaskScheduler {
     
-    private final TaskRepo taskRepo;
     private final TaskDispatcher dispatcher;
 
     public void pushMapTasks(List<Task> tasks) { 

@@ -9,7 +9,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @Configuration
 public class ThreadPoolConfig {
     
-    @Bean
+    @Bean("mapExecutor")
     public Executor mapWorkerPool() { 
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
@@ -24,7 +24,8 @@ public class ThreadPoolConfig {
         return executor;
     }
 
-    @Bean Executor reduceWorkerPool() { 
+    @Bean("reduceExecutor")
+    public Executor reduceWorkerPool() { 
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
         executor.setCorePoolSize(3);

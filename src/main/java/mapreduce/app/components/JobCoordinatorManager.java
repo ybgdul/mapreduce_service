@@ -12,10 +12,10 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import mapreduce.app.entities.Job;
 import mapreduce.app.entities.Task;
+import mapreduce.app.registries.TaskRegistry;
 import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.MapResultRepo;
 import mapreduce.app.repositories.TaskRepo;
-import mapreduce.app.services.JobService;
 import mapreduce.app.utilities.Enums.JobStatus;
 import mapreduce.app.utilities.Enums.TaskType;
 import mapreduce.app.utilities.Interfaces.PostProcessService;
@@ -30,7 +30,6 @@ public class JobCoordinatorManager {
     private final JobRepo jobRepo;
     private final MapResultRepo mapResultRepo;
     private final TaskGenerator taskGenerator;
-    private final JobService jobService;
     private final TaskRegistry taskRegistry;
     
     private final Map<Long, JobCoordinator> coordinators = new ConcurrentHashMap<>();
@@ -41,12 +40,6 @@ public class JobCoordinatorManager {
 
     @Scheduled(fixedDelay = 1000)
     public void poll() { 
-        //
-        coordinators.values().forEach(JobCoordinator::poll);
-    }
-
-    @PostConstruct
-    private void initialize() {
         List<Task> tasks = taskRepo.getAllCreatedRunningAssignedTasks();
         List<Task> reduces = new ArrayList<>();
         List<Task> maps = new ArrayList<>();
@@ -58,6 +51,11 @@ public class JobCoordinatorManager {
 
         taskScheduler.pushMapTasks(maps);
         taskScheduler.pushReduceTasks(reduces);
+        coordinators.values().forEach(JobCoordinator::poll);
+    }
+
+    @PostConstruct
+    private void initialize() {
 
         List<Job> jobs = jobRepo.findAllLeftOutJobs();
 
@@ -75,8 +73,8 @@ public class JobCoordinatorManager {
         service.postProcess(job);
     }
 
-    public void terminateJob(Job job, Exception e) { 
-        coordinators.remove(job.getId());
-        jobService.totalCleanup(job, e);
+    public void cancelJob(Job job) { 
+        JobCoordinator coordinator = coordinators.remove(job.getId());
+        if(coordinator == null) return;
     }
 }
