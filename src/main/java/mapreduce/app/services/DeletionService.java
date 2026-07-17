@@ -9,7 +9,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import mapreduce.app.entities.Job;
 import mapreduce.app.entities.MapResult;
+import mapreduce.app.entities.ReduceResult;
 import mapreduce.app.entities.Task;
+import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.MapResultRepo;
 import mapreduce.app.repositories.ReduceResultRepo;
 import mapreduce.app.repositories.TaskRepo;
@@ -25,6 +27,7 @@ public class DeletionService {
     private final TaskRepo taskRepo;
     private final MapResultRepo mapResultRepo;
     private final ReduceResultRepo reduceResultRepo;
+    private final JobRepo jobRepo;
     
     
     @Transactional
@@ -55,5 +58,24 @@ public class DeletionService {
         mapResultRepo.saveAll(results);
         mapResultRepo.deleteById(toDelete.getId());
         return;
+    }
+
+    public void terminateReduceResult(ReduceResult reduceResult, Job job) { 
+        Task reduce = taskRepo.findById(reduceResult.getTask().getId()).orElse(null);
+        if(reduce == null) return;
+
+        List<MapResult> mapResults = mapResultRepo.getAllResultsBySequenceAndJobId(job.getId(), reduce.getStartRange(), reduce.getEndRange());
+
+        for(MapResult result : mapResults) { 
+            result.setClaimed(false);
+        }
+        job.setStatus(JobStatus.RUNNING);
+
+        reduceResultRepo.delete(reduceResult);
+        taskRepo.delete(reduce);
+        storageService.delete(job.getId(), reduce.getId(), false);
+
+        jobRepo.save(job);
+        mapResultRepo.saveAll(mapResults);
     }
 }

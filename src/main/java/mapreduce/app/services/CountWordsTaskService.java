@@ -95,7 +95,7 @@ public class CountWordsTaskService implements TaskService{
         taskRepo.saveAndFlush(task);
 
         List<MapResult> results = mapResultRepo.getAllResultsBySequenceAndJobId(task.getJob().getId(), task.getStartRange(), task.getEndRange());
-
+        
         long answer = (long) 0;
         long currentSubsequence = results.getFirst().getSequence() - 1;
         for(MapResult result : results) {
