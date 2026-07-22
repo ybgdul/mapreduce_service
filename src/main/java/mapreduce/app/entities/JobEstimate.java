@@ -12,6 +12,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -38,4 +39,7 @@ public class JobEstimate {
 
     @Column(nullable=false)
     private Instant createdAt;
+
+    @Version
+    private Long version;
 }

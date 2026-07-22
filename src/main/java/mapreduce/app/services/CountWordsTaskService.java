@@ -56,6 +56,7 @@ public class CountWordsTaskService implements TaskService{
     @Override
     public void executeMapTask(Task task) {
         this.task = task;
+        task.setStartedAt(Instant.now());
         task.setStatus(TaskStatus.RUNNING);
         Job job = task.getJob();
         taskRepo.saveAndFlush(task);
@@ -83,14 +84,15 @@ public class CountWordsTaskService implements TaskService{
         mapResult.setSequence(task.getSequence());
         mapResult.setStoragePath(storage.location());
         mapResult.setTask(task);
+        task.setCompletedAt(Instant.now());
         mapResultRepo.save(mapResult);
         taskRepo.save(task);
-        
     }
 
     @Override
     public void executeReduceTask(Task task) {
         this.task = task;
+        task.setStartedAt(Instant.now());
         task.setStatus(TaskStatus.RUNNING);
         taskRepo.saveAndFlush(task);
 
@@ -121,6 +123,7 @@ public class CountWordsTaskService implements TaskService{
         result.setJob(task.getJob());
         result.setStoragePath(storage.location());
         result.setTask(task);
+        task.setCompletedAt(Instant.now());
         reduceResultRepo.save(result);
         taskRepo.save(task);
     }

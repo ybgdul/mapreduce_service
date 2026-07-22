@@ -4,26 +4,42 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import lombok.RequiredArgsConstructor;
 import mapreduce.app.entities.Job;
 import mapreduce.app.entities.Task;
 import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.TaskRepo;
+import mapreduce.app.services.EstimateService;
+import mapreduce.app.utilities.DTOs.JobContext;
 import mapreduce.app.utilities.DTOs.StorageFileDto;
 import mapreduce.app.utilities.Enums.JobStatus;
 import mapreduce.app.utilities.Enums.TaskStatus;
 import mapreduce.app.utilities.Enums.TaskType;
 
 @Component
-@RequiredArgsConstructor
 public class TaskGenerator {
     
     private final JobRepo jobRepo;
     private final TaskRepo taskRepo;
-    private static final long CHUNK_SIZE = 134_217_728;
     private final TaskScheduler taskScheduler;
+    private final long CHUNK_SIZE;
+    private final int threadSize;
+    private final double initialTime;
+    private final EstimateService estimateService;
+
+    //hand written constructor because i have to inject with @Value immediately
+    public TaskGenerator(mapreduce.app.repositories.JobRepo jobRepo, mapreduce.app.repositories.TaskRepo taskRepo, mapreduce.app.components.TaskScheduler taskScheduler, @Value(value = "${count.words.chunk.size}")
+            long CHUNK_SIZE, @Value("${total.thread.count}") int threadSize, @Value(value = "${count.words.average.time}") double initialTime, EstimateService estimateService){
+        this.jobRepo = jobRepo;
+        this.taskRepo = taskRepo;
+        this.taskScheduler = taskScheduler;
+        this.CHUNK_SIZE = CHUNK_SIZE;
+        this.threadSize = threadSize;
+        this.initialTime = initialTime;
+        this.estimateService = estimateService;
+    }
 
 
     public void generateMapTasks(Job job, StorageFileDto metadata) { 
@@ -50,6 +66,11 @@ public class TaskGenerator {
             count++;
         }
 
+        job.setTotalTasks(count);
+
+        JobContext context = new JobContext(CHUNK_SIZE, count, threadSize, (long) 0, initialTime);
+        
+        estimateService.estimateAndCreateJob(job, context);
         taskRepo.saveAll(tasks);
         job.setTotalTasks(count);
         jobRepo.save(job);

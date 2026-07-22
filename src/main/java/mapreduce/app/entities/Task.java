@@ -24,7 +24,8 @@ import mapreduce.app.utilities.Enums.TaskType;
 
 @Entity
 @Table(name="tasks", indexes = {
-    @Index(name="idx_task_status", columnList = "status")
+    @Index(name="idx_task_status", columnList = "status"),
+    @Index(name="idx_task_job_id", columnList = "job_id")
 })
 @Getter
 @Setter
@@ -70,4 +71,7 @@ public class Task {
     @JoinColumn(name="job_id", nullable=false)
     private Job job;
 
+    public Long getJobId() { 
+        return this.job.getId();
+    }
 }

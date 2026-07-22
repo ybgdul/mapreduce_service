@@ -43,7 +43,7 @@ public class Job {
     @Column(nullable=false)
     private Instant createdAt;
 
-    private Instant startedAt;
+    private double averageTime;
 
     private Instant completedAt;
 
@@ -61,6 +61,7 @@ public class Job {
     private AppUser user;
 
     private String errorMessage;
+    
 
     public Job(JobType type, AppUser user) {
         this.type = type;

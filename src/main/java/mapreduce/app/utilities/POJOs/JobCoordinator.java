@@ -1,5 +1,6 @@
 package mapreduce.app.utilities.POJOs;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -8,10 +9,14 @@ import java.util.Objects;
 
 import mapreduce.app.components.JobCoordinatorManager;
 import mapreduce.app.components.TaskGenerator;
+import mapreduce.app.components.TaskScheduler;
 import mapreduce.app.entities.Job;
+import mapreduce.app.entities.Task;
 import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.MapResultRepo;
 import mapreduce.app.utilities.Enums.JobStatus;
+import mapreduce.app.utilities.Enums.TaskStatus;
+import mapreduce.app.utilities.Enums.TaskType;
 import mapreduce.app.utilities.Exceptions.UnknownJobException;
 
 public class JobCoordinator {
@@ -23,13 +28,15 @@ public class JobCoordinator {
     private final TaskGenerator taskGenerator;
     private final JobRepo jobRepo;
     private final Long jobId;
+    private final TaskScheduler scheduler;
 
-    public JobCoordinator(JobCoordinatorManager manager, MapResultRepo mapResultRepo, TaskGenerator taskGenerator, JobRepo jobRepo, Long jobId) { 
+    public JobCoordinator(JobCoordinatorManager manager, MapResultRepo mapResultRepo, TaskGenerator taskGenerator, JobRepo jobRepo, Long jobId, TaskScheduler scheduler) { 
         this.manager = manager;
         this.mapResultRepo = mapResultRepo;
         this.taskGenerator = taskGenerator;
         this.jobRepo = jobRepo;
         this.jobId = jobId;
+        this.scheduler = scheduler;
     }
 
     public void poll() {
@@ -51,6 +58,32 @@ public class JobCoordinator {
             }
         }
         taskGenerator.generateReduceTasks(resultSequences, job);   
+    }
+    public void taskCountAndGeneration(List<Task> tasks) { 
+        List<Task> toRunMap = new ArrayList<>();
+        List<Task> toRunReduce = new ArrayList<>();
+        long runCount = 0;
+        long doneCount = 0;
+        Duration totalDuration = Duration.ZERO;
+        for(Task task : tasks) { 
+            if (task.getStatus() == TaskStatus.CREATED || task.getStatus() == TaskStatus.RUNNING) {
+                runCount++;
+                if(task.getTaskType() == TaskType.MAP) toRunMap.add(task);
+                else toRunReduce.add(task);
+            }
+            else if(task.getStatus() == TaskStatus.COMPLETED) {doneCount++; totalDuration = totalDuration.plus(Duration.between(task.getCompletedAt(), task.getStartedAt()));}
+        }
+        Job job = jobRepo.findById(jobId).orElseThrow(() -> new UnknownJobException("No such job by id: " + jobId));
+        Duration average = totalDuration.dividedBy(doneCount);
+        long total = tasks.size();
+        job.setTotalTasks(total);
+        job.setCompletedTasks(doneCount);
+        job.setFailedTasks(total - doneCount - runCount);
+        job.setAverageTime(average.toSeconds());
+
+        jobRepo.save(job);
+        scheduler.pushMapTasks(toRunMap);
+        scheduler.pushMapTasks(toRunReduce);
     }
 
     private List<List<Long>> buildSubsequenceRanges(List<Long> sequences) { 
@@ -78,5 +111,6 @@ public class JobCoordinator {
         result.add(Arrays.asList(start, end));
         return result;
     }
+
 }
 

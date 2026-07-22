@@ -2,6 +2,7 @@ package mapreduce.app.services;
 
 import java.io.InputStream;
 import java.time.Instant;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,6 +29,7 @@ public class JobService {
     private final AppUserRepo userRepo;
     private final JobRepo jobRepo;
     private final JobCoordinatorManager jobCoordinatorManager;
+    private final EstimateService estimateService;
     
     public Long submitWordCountJob(MultipartFile file, Long userId) { 
         

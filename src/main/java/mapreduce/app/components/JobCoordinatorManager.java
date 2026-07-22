@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -17,7 +18,6 @@ import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.MapResultRepo;
 import mapreduce.app.repositories.TaskRepo;
 import mapreduce.app.utilities.Enums.JobStatus;
-import mapreduce.app.utilities.Enums.TaskType;
 import mapreduce.app.utilities.Interfaces.PostProcessService;
 import mapreduce.app.utilities.POJOs.JobCoordinator;
 
@@ -35,22 +35,19 @@ public class JobCoordinatorManager {
     private final Map<Long, JobCoordinator> coordinators = new ConcurrentHashMap<>();
 
     public void register(Job job) {
-        coordinators.put(job.getId(), new JobCoordinator(this, mapResultRepo, taskGenerator, jobRepo, job.getId()));
+        coordinators.put(job.getId(), new JobCoordinator(this, mapResultRepo, taskGenerator, jobRepo, job.getId(), taskScheduler));
     }
 
     @Scheduled(fixedDelay = 1000)
     public void poll() { 
-        List<Task> tasks = taskRepo.getAllCreatedRunningAssignedTasks();
-        List<Task> reduces = new ArrayList<>();
-        List<Task> maps = new ArrayList<>();
+        List<Long> ids = new ArrayList<>(coordinators.keySet());
+        List<Task> tasks = taskRepo.getAllTaskBelongToJobId(ids);
 
-        for(Task task : tasks) { 
-            if(task.getTaskType() == TaskType.MAP) maps.add(task);
-            else reduces.add(task);
-        }
-
-        taskScheduler.pushMapTasks(maps);
-        taskScheduler.pushReduceTasks(reduces);
+        Map<Long, List<Task>> tasksById = tasks.stream().collect(Collectors.groupingBy(Task::getJobId));
+        coordinators.forEach((jobId, coordinator) -> {
+            List<Task> jobTasks = tasksById.get(jobId);
+            coordinator.taskCountAndGeneration(jobTasks);
+        });
         coordinators.values().forEach(JobCoordinator::poll);
     }
 
@@ -77,4 +74,5 @@ public class JobCoordinatorManager {
         JobCoordinator coordinator = coordinators.remove(job.getId());
         if(coordinator == null) return;
     }
+
 }
