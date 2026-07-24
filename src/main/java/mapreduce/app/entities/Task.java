@@ -48,13 +48,8 @@ public class Task {
     @Column(nullable = false)
     private JobType jobType;
 
-    @Column(nullable=false, unique=true)
+    @Column(nullable=false)
     private Long sequence;
-
-    private String workerId;
-
-    private String inputReference;
-    private String outputReference;
 
     private Instant createdAt;
 
@@ -73,5 +68,18 @@ public class Task {
 
     public Long getJobId() { 
         return this.job.getId();
+    }
+
+    public Task(Task task) { 
+        this.status = task.status;
+        this.taskType = task.taskType;
+        this.jobType = task.jobType;
+        this.sequence = task.sequence;
+        this.createdAt = Instant.now();
+        this.startedAt = null;
+        this.completedAt = null;
+        this.startRange = task.startRange;
+        this.endRange = task.endRange;
+        this.job = task.job;
     }
 }

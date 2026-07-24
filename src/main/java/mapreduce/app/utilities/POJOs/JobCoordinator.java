@@ -12,8 +12,10 @@ import mapreduce.app.components.TaskGenerator;
 import mapreduce.app.components.TaskScheduler;
 import mapreduce.app.entities.Job;
 import mapreduce.app.entities.Task;
+import mapreduce.app.repositories.JobEstimateRepo;
 import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.MapResultRepo;
+import mapreduce.app.services.EstimateService;
 import mapreduce.app.utilities.Enums.JobStatus;
 import mapreduce.app.utilities.Enums.TaskStatus;
 import mapreduce.app.utilities.Enums.TaskType;
@@ -29,14 +31,18 @@ public class JobCoordinator {
     private final JobRepo jobRepo;
     private final Long jobId;
     private final TaskScheduler scheduler;
+    private final JobEstimateRepo estimateRepo;
+    private final EstimateService estimateService;
 
-    public JobCoordinator(JobCoordinatorManager manager, MapResultRepo mapResultRepo, TaskGenerator taskGenerator, JobRepo jobRepo, Long jobId, TaskScheduler scheduler) { 
+    public JobCoordinator(JobCoordinatorManager manager, MapResultRepo mapResultRepo, TaskGenerator taskGenerator, JobRepo jobRepo, Long jobId, TaskScheduler scheduler, JobEstimateRepo estimateRepo, EstimateService estimateService) { 
         this.manager = manager;
         this.mapResultRepo = mapResultRepo;
         this.taskGenerator = taskGenerator;
         this.jobRepo = jobRepo;
         this.jobId = jobId;
         this.scheduler = scheduler;
+        this.estimateRepo = estimateRepo;
+        this.estimateService = estimateService;
     }
 
     public void poll() {
@@ -64,24 +70,39 @@ public class JobCoordinator {
         List<Task> toRunReduce = new ArrayList<>();
         long runCount = 0;
         long doneCount = 0;
-        Duration totalDuration = Duration.ZERO;
+        long totalMillis = 0;
+        long doneMapCount = 0;
+        Job job = jobRepo.findById(jobId).orElseThrow(() -> new UnknownJobException("No such job by id: " + jobId));
+        double time = estimateRepo.findEstimateByJob(job).orElseThrow(() -> new UnknownJobException("No such estimate by job id: " + jobId));
+        List<Task> badPerformance = new ArrayList<>();
         for(Task task : tasks) { 
             if (task.getStatus() == TaskStatus.CREATED || task.getStatus() == TaskStatus.RUNNING) {
                 runCount++;
                 if(task.getTaskType() == TaskType.MAP) toRunMap.add(task);
                 else toRunReduce.add(task);
             }
-            else if(task.getStatus() == TaskStatus.COMPLETED) {doneCount++; totalDuration = totalDuration.plus(Duration.between(task.getCompletedAt(), task.getStartedAt()));}
+            else if(task.getStatus() == TaskStatus.COMPLETED) {
+                doneCount++; 
+                if(task.getTaskType() == TaskType.MAP) { 
+                    doneMapCount++;
+                    long millis = Duration.between(task.getStartedAt(), task.getCompletedAt()).toMillis();
+                    totalMillis += millis;
+                    if(millis >= time * 3) {
+                        Task duplicate = new Task(task);
+                        badPerformance.add(duplicate);
+                    }
+                }
+            }
         }
-        Job job = jobRepo.findById(jobId).orElseThrow(() -> new UnknownJobException("No such job by id: " + jobId));
-        Duration average = totalDuration.dividedBy(doneCount);
+        double average = totalMillis / doneMapCount;
         long total = tasks.size();
         job.setTotalTasks(total);
         job.setCompletedTasks(doneCount);
         job.setFailedTasks(total - doneCount - runCount);
-        job.setAverageTime(average.toSeconds());
+        double potentialTime = estimateService.
 
         jobRepo.save(job);
+        scheduler.pushMapTasks(badPerformance);
         scheduler.pushMapTasks(toRunMap);
         scheduler.pushMapTasks(toRunReduce);
     }

@@ -70,7 +70,7 @@ public class TaskGenerator {
 
         JobContext context = new JobContext(CHUNK_SIZE, count, threadSize, (long) 0, initialTime);
         
-        estimateService.estimateAndCreateJob(job, context);
+        estimateService.estimateAndCreateJobEstimate(job, context);
         taskRepo.saveAll(tasks);
         job.setTotalTasks(count);
         jobRepo.save(job);

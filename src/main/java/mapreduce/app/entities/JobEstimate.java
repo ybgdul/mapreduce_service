@@ -10,7 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.Getter;
@@ -30,12 +30,12 @@ public class JobEstimate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(nullable = false, name="job_id")
+    @OneToOne(fetch=FetchType.LAZY)
+    @JoinColumn(nullable = false, name="job_id", unique=true)
     private Job job;
 
     @Column(nullable=false)
-    private double estimate;
+    private Double estimate;
 
     @Column(nullable=false)
     private Instant createdAt;

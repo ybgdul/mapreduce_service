@@ -43,8 +43,6 @@ public class Job {
     @Column(nullable=false)
     private Instant createdAt;
 
-    private double averageTime;
-
     private Instant completedAt;
 
     @Column(nullable=false)

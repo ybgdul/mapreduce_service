@@ -14,9 +14,11 @@ import lombok.RequiredArgsConstructor;
 import mapreduce.app.entities.Job;
 import mapreduce.app.entities.Task;
 import mapreduce.app.registries.TaskRegistry;
+import mapreduce.app.repositories.JobEstimateRepo;
 import mapreduce.app.repositories.JobRepo;
 import mapreduce.app.repositories.MapResultRepo;
 import mapreduce.app.repositories.TaskRepo;
+import mapreduce.app.services.EstimateService;
 import mapreduce.app.utilities.Enums.JobStatus;
 import mapreduce.app.utilities.Interfaces.PostProcessService;
 import mapreduce.app.utilities.POJOs.JobCoordinator;
@@ -31,11 +33,13 @@ public class JobCoordinatorManager {
     private final MapResultRepo mapResultRepo;
     private final TaskGenerator taskGenerator;
     private final TaskRegistry taskRegistry;
+    private final JobEstimateRepo estimateRepo;
+    private final EstimateService estimateService;
     
     private final Map<Long, JobCoordinator> coordinators = new ConcurrentHashMap<>();
 
     public void register(Job job) {
-        coordinators.put(job.getId(), new JobCoordinator(this, mapResultRepo, taskGenerator, jobRepo, job.getId(), taskScheduler));
+        coordinators.put(job.getId(), new JobCoordinator(this, mapResultRepo, taskGenerator, jobRepo, job.getId(), taskScheduler, estimateRepo, estimateService));
     }
 
     @Scheduled(fixedDelay = 1000)

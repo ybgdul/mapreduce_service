@@ -29,7 +29,6 @@ public class JobService {
     private final AppUserRepo userRepo;
     private final JobRepo jobRepo;
     private final JobCoordinatorManager jobCoordinatorManager;
-    private final EstimateService estimateService;
     
     public Long submitWordCountJob(MultipartFile file, Long userId) { 
         
