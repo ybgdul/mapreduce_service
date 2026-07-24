@@ -27,26 +27,22 @@ public class EstimateService {
         estimate.setEstimate(seconds);
         estimate.setCreatedAt(Instant.now());
         estimate.setVersion((long) 1);
+        estimate.setChunkSize(context.inputSize());
+        estimate.setThreadPoolSize(context.threadPoolSize());
 
         estimateRepo.save(estimate);
 
         return estimate;
     }
 
-    // @Transactional
-    // public void recordExecutionTime(Job job, double timeTaken) { 
-    //     int tries = 3;
+    public JobEstimate estimateAndPersistEstimate(JobEstimate estimate, double average, long remainingTasks, long runningTasks) { 
+        JobContext context = new JobContext(estimate.getChunkSize(), remainingTasks, estimate.getThreadPoolSize(), runningTasks, average);
+        double seconds = model.predict(context);
 
-    //     while(tries-- > 0) { 
-    //         try { 
-                
-    //         } catch (OptimisticLockException e) { 
-                
-    //         }
-    //     }
-    // }
+        estimate.setEstimate(seconds);
 
-    public JobEstimate estimateAndPersisEstimate(JobEstimate estimate, JobContext context) { 
+        estimateRepo.save(estimate);
         
+        return estimate;
     }
 }

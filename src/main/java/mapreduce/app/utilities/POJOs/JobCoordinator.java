@@ -11,6 +11,7 @@ import mapreduce.app.components.JobCoordinatorManager;
 import mapreduce.app.components.TaskGenerator;
 import mapreduce.app.components.TaskScheduler;
 import mapreduce.app.entities.Job;
+import mapreduce.app.entities.JobEstimate;
 import mapreduce.app.entities.Task;
 import mapreduce.app.repositories.JobEstimateRepo;
 import mapreduce.app.repositories.JobRepo;
@@ -73,7 +74,8 @@ public class JobCoordinator {
         long totalMillis = 0;
         long doneMapCount = 0;
         Job job = jobRepo.findById(jobId).orElseThrow(() -> new UnknownJobException("No such job by id: " + jobId));
-        double time = estimateRepo.findEstimateByJob(job).orElseThrow(() -> new UnknownJobException("No such estimate by job id: " + jobId));
+        JobEstimate estimate = estimateRepo.findByJob(job).orElseThrow(() -> new UnknownJobException("No such estimate by job id: " + jobId));
+        double time = estimate.getEstimate();
         List<Task> badPerformance = new ArrayList<>();
         for(Task task : tasks) { 
             if (task.getStatus() == TaskStatus.CREATED || task.getStatus() == TaskStatus.RUNNING) {
@@ -99,7 +101,7 @@ public class JobCoordinator {
         job.setTotalTasks(total);
         job.setCompletedTasks(doneCount);
         job.setFailedTasks(total - doneCount - runCount);
-        double potentialTime = estimateService.
+        estimateService.estimateAndPersistEstimate(estimate, average, doneCount, runCount);
 
         jobRepo.save(job);
         scheduler.pushMapTasks(badPerformance);

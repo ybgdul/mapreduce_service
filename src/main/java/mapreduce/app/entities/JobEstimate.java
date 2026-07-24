@@ -42,4 +42,10 @@ public class JobEstimate {
 
     @Version
     private Long version;
+
+    @Column(nullable = false)
+    private Long chunkSize;
+    
+    @Column(nullable = false)
+    private int threadPoolSize;
 }

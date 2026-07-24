@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import mapreduce.app.entities.Job;
 import mapreduce.app.entities.MapResult;
@@ -42,7 +43,6 @@ public class CountWordsTaskService implements TaskService{
     private final ObjectMapper objectMapper;
     private final DeletionService deletionService;
 
-
     @Override
     public JobType getJobType() {
         return JobType.COUNT_WORDS;
@@ -72,7 +72,9 @@ public class CountWordsTaskService implements TaskService{
             task.setStatus(TaskStatus.FAILED);
             taskRepo.save(task);
             deletionService.terminate(job, e);
-        } 
+        }         
+
+        if(mapResultRepo.existsByJobAndSequence(job, task.getSequence())) {return;}
 
         task.setStatus(TaskStatus.COMPLETED);
         CountTaskResult result = new CountTaskResult( task.getStartRange(), task.getEndRange(), count);

@@ -1,6 +1,7 @@
 package mapreduce.app.repositories;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,5 +21,6 @@ public interface MapResultRepo extends JpaRepository<MapResult, Long>{
     @Query(value="SELECT * FROM map_result WHERE job_id = :job_id AND sequence BETWEEN :start AND :end", nativeQuery=true)
     public List<MapResult> getAllResultsBySequenceAndJobId(@Param("job_id") Long job_id, @Param("start") Long start, @Param("end") Long end);
 
+    public boolean existsByJobAndSequence(Job job, Long sequence);
     public void deleteAllByJob(Job job );
 }

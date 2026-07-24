@@ -50,7 +50,7 @@ public class JobService {
 
         jobCoordinatorManager.register(job);
 
-        taskGenerator.generateMapTasks(job, holder);
+        taskGenerator.generateMapTasksFirstTime(job, holder);
 
         return job.getId();
     }

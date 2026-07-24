@@ -68,6 +68,39 @@ public class TaskGenerator {
 
         job.setTotalTasks(count);
 
+        taskRepo.saveAll(tasks);
+        job.setTotalTasks(count);
+        jobRepo.save(job);
+
+        taskScheduler.pushMapTasks(tasks);
+    }
+
+    public void generateMapTasksFirstTime(Job job, StorageFileDto metadata) { 
+
+        job.setStatus(JobStatus.RUNNING);
+
+        Long length = metadata.length();
+
+        List<Task> tasks = new ArrayList<>();
+
+        long index = 1;
+        long count = 0;
+        for(long i = 0; i < length; i += CHUNK_SIZE) { 
+            Task task = new Task();
+            if(i + CHUNK_SIZE > length) {task.setEndRange(length); task.setStartRange(i);}
+            else {task.setEndRange(i + CHUNK_SIZE); task.setStartRange(i); }
+            task.setSequence(index++);
+            task.setStatus(TaskStatus.CREATED);
+            task.setCreatedAt(Instant.now());
+            task.setJob(job);
+            task.setJobType(job.getType());
+            task.setTaskType(TaskType.MAP);
+            tasks.add(task);
+            count++;
+        }
+
+        job.setTotalTasks(count);
+
         JobContext context = new JobContext(CHUNK_SIZE, count, threadSize, (long) 0, initialTime);
         
         estimateService.estimateAndCreateJobEstimate(job, context);
